@@ -39,21 +39,23 @@ using namespace std;
 class ImageGrabber
 {
 public:
-    ImageGrabber(ORB_SLAM3::System* pSLAM):mpSLAM(pSLAM){}
+    ImageGrabber(ORB_SLAM3::System* pSLAM):mpSLAM(pSLAM){
+        imageScale = mpSLAM->GetImageScale();
+    }
 
     void GrabStereo(const sensor_msgs::msg::Image::ConstSharedPtr& msgLeft,const sensor_msgs::msg::Image::ConstSharedPtr& msgRight);
 
     ORB_SLAM3::System* mpSLAM;
-    bool do_rectify;
+    float imageScale;
     cv::Mat M1l,M2l,M1r,M2r;
 };
 
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-    if(argc != 4)
+    if(argc != 3)
     {
-        cerr << endl << "Usage: rosrun ORB_SLAM3 Stereo path_to_vocabulary path_to_settings do_rectify" << endl;
+        cerr << endl << "Usage: ros2 run orbslam3 Stereo path_to_vocabulary path_to_settings" << endl;
         rclcpp::shutdown();
         return 1;
     }    
@@ -62,48 +64,6 @@ int main(int argc, char **argv)
     ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::STEREO,true);
 
     ImageGrabber igb(&SLAM);
-
-    stringstream ss(argv[3]);
-	ss >> boolalpha >> igb.do_rectify;
-
-    if(igb.do_rectify)
-    {      
-        // Load settings related to stereo calibration
-        cv::FileStorage fsSettings(argv[2], cv::FileStorage::READ);
-        if(!fsSettings.isOpened())
-        {
-            cerr << "ERROR: Wrong path to settings" << endl;
-            return -1;
-        }
-
-        cv::Mat K_l, K_r, P_l, P_r, R_l, R_r, D_l, D_r;
-        fsSettings["LEFT.K"] >> K_l;
-        fsSettings["RIGHT.K"] >> K_r;
-
-        fsSettings["LEFT.P"] >> P_l;
-        fsSettings["RIGHT.P"] >> P_r;
-
-        fsSettings["LEFT.R"] >> R_l;
-        fsSettings["RIGHT.R"] >> R_r;
-
-        fsSettings["LEFT.D"] >> D_l;
-        fsSettings["RIGHT.D"] >> D_r;
-
-        int rows_l = fsSettings["LEFT.height"];
-        int cols_l = fsSettings["LEFT.width"];
-        int rows_r = fsSettings["RIGHT.height"];
-        int cols_r = fsSettings["RIGHT.width"];
-
-        if(K_l.empty() || K_r.empty() || P_l.empty() || P_r.empty() || R_l.empty() || R_r.empty() || D_l.empty() || D_r.empty() ||
-                rows_l==0 || rows_r==0 || cols_l==0 || cols_r==0)
-        {
-            cerr << "ERROR: Calibration parameters to rectify stereo are missing!" << endl;
-            return -1;
-        }
-
-        cv::initUndistortRectifyMap(K_l,D_l,R_l,P_l.rowRange(0,3).colRange(0,3),cv::Size(cols_l,rows_l),CV_32F,igb.M1l,igb.M2l);
-        cv::initUndistortRectifyMap(K_r,D_r,R_r,P_r.rowRange(0,3).colRange(0,3),cv::Size(cols_r,rows_r),CV_32F,igb.M1r,igb.M2r);
-    }
 
     auto node = rclcpp::Node::make_shared("my_node");
 
@@ -154,15 +114,33 @@ void ImageGrabber::GrabStereo(const sensor_msgs::msg::Image::ConstSharedPtr& msg
         return;
     }
 
-    if(do_rectify)
+    if(imageScale != 1.f)
     {
-        cv::Mat imLeft, imRight;
-        cv::remap(cv_ptrLeft->image,imLeft,M1l,M2l,cv::INTER_LINEAR);
-        cv::remap(cv_ptrRight->image,imRight,M1r,M2r,cv::INTER_LINEAR);
+#ifdef REGISTER_TIMES
+    #ifdef COMPILEDWITHC11
+                std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
+    #else
+                std::chrono::monotonic_clock::time_point t_Start_Resize = std::chrono::monotonic_clock::now();
+    #endif
+#endif
+                int width = cv_ptrLeft->image.cols * imageScale;
+                int height = cv_ptrLeft->image.rows * imageScale;
+                cv::Mat imLeft, imRight;
+                cv::resize(cv_ptrLeft->image, imLeft, cv::Size(width, height));
+                cv::resize(cv_ptrRight->image, imRight, cv::Size(width, height));
+#ifdef REGISTER_TIMES
+    #ifdef COMPILEDWITHC11
+                std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
+    #else
+                std::chrono::monotonic_clock::time_point t_End_Resize = std::chrono::monotonic_clock::now();
+    #endif
+                t_resize = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t_End_Resize - t_Start_Resize).count();
+                SLAM.InsertResizeTime(t_resize);
+#endif
+        printf("TrackStereo: time %f", cv_ptrLeft->header.stamp.sec);
         mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.sec);
-    }
-    else
-    {
+    } else {
+        printf("TrackStereo: time %f", cv_ptrLeft->header.stamp.sec);
         mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.sec);
     }
 
