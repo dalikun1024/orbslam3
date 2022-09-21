@@ -77,6 +77,12 @@ src/ros_stereo.cc
 )
 ament_target_dependencies(Stereo rclcpp std_msgs sensor_msgs image_transport cv_bridge)
 
+# Node for stereo image publisher
+add_executable(StereoPublisher
+src/ros_stereo_publisher.cc
+)
+ament_target_dependencies(StereoPublisher rclcpp std_msgs sensor_msgs image_transport cv_bridge)
+
 target_link_libraries(Stereo
 ${LIBS}
 )
@@ -84,8 +90,14 @@ ${LIBS}
 set_target_properties(Stereo PROPERTIES 
   INSTALL_RPATH "/work/orb_slam3/lib")
 
-install(TARGETS
-Stereo
+target_link_libraries(StereoPublisher
+  ${LIBS}
+)
+  
+set_target_properties(StereoPublisher PROPERTIES 
+    INSTALL_RPATH "/work/orb_slam3/lib")
+
+install(TARGETS Stereo StereoPublisher
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
