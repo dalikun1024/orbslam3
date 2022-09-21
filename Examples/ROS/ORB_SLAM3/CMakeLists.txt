@@ -81,6 +81,9 @@ target_link_libraries(Stereo
 ${LIBS}
 )
 
+set_target_properties(Stereo PROPERTIES 
+  INSTALL_RPATH "/work/orb_slam3/lib")
+
 install(TARGETS
 Stereo
   DESTINATION lib/${PROJECT_NAME})
