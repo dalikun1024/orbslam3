@@ -105,6 +105,12 @@ private:
 
 int main(int argc, char * argv[])
 {
+  if(argc != 4)
+  {
+      cerr << endl << "Usage: ros2 run orbslam3 StereoPublisher path_to_cam0 path_to_cam1 path_to_frame_name" << endl;
+      rclcpp::shutdown();
+      return 1;
+  } 
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<StereoPublisher>(argv[1], argv[2], argv[3]));
   rclcpp::shutdown();
