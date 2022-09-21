@@ -55,10 +55,10 @@ private:
     cv::Mat right_mat = cv::imread(right_path + "/" + frame_names[count_], cv::IMREAD_UNCHANGED);
     sensor_msgs::msg::Image::SharedPtr msg_left = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", left_mat).toImageMsg();
     sensor_msgs::msg::Image::SharedPtr msg_right = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", right_mat).toImageMsg();
-    msg_left->header.stamp.nanosec = frame_times[count_];
+    msg_left->header.stamp = this->now();
     msg_right->header.stamp = msg_left->header.stamp;
-    RCLCPP_INFO(this->get_logger(), "Publishing left image: size: [%d, %d], time: %d\n", left_mat.rows, left_mat.cols, msg_left->header.stamp.sec);
-    RCLCPP_INFO(this->get_logger(), "Publishing right image: size: [%d, %d]\n", right_mat.rows, right_mat.cols);
+    RCLCPP_INFO(this->get_logger(), "Publishing left image: size: [%d, %d], time: %d\n", left_mat.rows, left_mat.cols, msg_left->header.stamp.nanosec);
+    RCLCPP_INFO(this->get_logger(), "Publishing right image: size: [%d, %d], time: %d\n", right_mat.rows, right_mat.cols, msg_left->header.stamp.nanosec);
     publisher_left_->publish(*msg_left.get());
     publisher_right_->publish(*msg_right.get());
     count_++;
@@ -107,7 +107,7 @@ int main(int argc, char * argv[])
 {
   if(argc != 4)
   {
-      cerr << endl << "Usage: ros2 run orbslam3 StereoPublisher path_to_cam0 path_to_cam1 path_to_frame_name" << endl;
+      std::cerr << std::endl << "Usage: ros2 run orbslam3 StereoPublisher path_to_cam0 path_to_cam1 path_to_frame_name" << std::endl;
       rclcpp::shutdown();
       return 1;
   } 
