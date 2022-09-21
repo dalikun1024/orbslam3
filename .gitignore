@@ -46,6 +46,7 @@ Examples/ROS/ORB_SLAM3/MonoAR
 Examples/ROS/ORB_SLAM3/RGBD
 Examples/ROS/ORB_SLAM3/Stereo
 Examples/ROS/ORB_SLAM3/Stereo_Inertial
+Examples/ROS/log
 
 Examples/Calibration/recorder_realsense_D435i
 
