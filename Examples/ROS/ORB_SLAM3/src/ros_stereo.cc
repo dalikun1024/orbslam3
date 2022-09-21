@@ -53,48 +53,34 @@ public:
 class StereoSubscriber : public rclcpp::Node {
     public:
     StereoSubscriber(ImageGrabber *igb) : Node("stereo_subscriber"), igb_(igb) {
-        left_sub.subscribe(this, "/camera/left/image_raw");
-        right_sub.subscribe(this, "/camera/right/image_raw");
-        typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image> sync_pol;
-        message_filters::TimeSynchronizer<sensor_msgs::msg::Image, sensor_msgs::msg::Image> sync(left_sub, right_sub, 10);
-        //message_filters::Synchronizer<sync_pol> sync(sync_pol(10), left_sub, right_sub);
-        sync.registerCallback(boost::bind(&StereoSubscriber::call_back, this));
+    }
+    void call_back(const sensor_msgs::msg::Image::ConstSharedPtr& image_left, 
+                   const sensor_msgs::msg::Image::ConstSharedPtr& image_right) { 
+        RCLCPP_INFO(this->get_logger(), "I heard: left, right %d %d\n", image_left->width, image_right->height);
+        igb_->GrabStereo(image_left, image_right);
     }
     private:
-    void call_back() { 
-        RCLCPP_INFO(this->get_logger(), "I heard: left, right");
-    }
     ImageGrabber *igb_;
-    message_filters::Subscriber<sensor_msgs::msg::Image> left_sub;
-    message_filters::Subscriber<sensor_msgs::msg::Image> right_sub;
 };
-
-int main(int argc, char **argv)
+  
+int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
     if(argc != 3)
     {
-        cerr << endl << "Usage: ros2 run orbslam3 Stereo path_to_vocabulary path_to_settings" << endl;
+        std::cerr << std::endl << "Usage: ros2 run orbslam3 Stereo path_to_vocabulary path_to_settings" << std::endl;
         rclcpp::shutdown();
         return 1;
-    }    
-
+    }
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::STEREO,true);
-
     ImageGrabber igb(&SLAM);
-    rclcpp::spin(std::make_shared<StereoSubscriber>(&igb));
-
-    // Stop all threads
-    SLAM.Shutdown();
-
-    // Save camera trajectory
-    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory_TUM_Format.txt");
-    SLAM.SaveTrajectoryTUM("FrameTrajectory_TUM_Format.txt");
-    SLAM.SaveTrajectoryKITTI("FrameTrajectory_KITTI_Format.txt");
-
-    rclcpp::shutdown();
-
+    auto nh = std::make_shared<StereoSubscriber>(&igb);
+    message_filters::Subscriber<sensor_msgs::msg::Image> image_sub_l(nh.get(), "/camera/left/image_raw");
+    message_filters::Subscriber<sensor_msgs::msg::Image> image_sub_r(nh.get(), "/camera/right/image_raw");
+    message_filters::TimeSynchronizer<sensor_msgs::msg::Image, sensor_msgs::msg::Image> sync(image_sub_l, image_sub_r, 1);
+    sync.registerCallback(boost::bind(&StereoSubscriber::call_back, nh.get(), _1, _2));
+    rclcpp::spin(nh);
     return 0;
 }
 
