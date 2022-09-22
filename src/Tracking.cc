@@ -534,7 +534,11 @@ Tracking::~Tracking()
 
 void Tracking::newParameterLoader(Settings *settings) {
     mpCamera = settings->camera1();
-    mpCamera = mpAtlas->AddCamera(mpCamera);
+    if (mSensor==System::STEREO || mSensor==System::IMU_STEREO) {
+        auto lapping_area = static_cast<KannalaBrandt8*>(mpCamera)->mvLappingArea;
+        mpCamera = mpAtlas->AddCamera(mpCamera);
+        static_cast<KannalaBrandt8*>(mpCamera)->mvLappingArea = lapping_area;
+    }
 
     if(settings->needToUndistort()){
         mDistCoef = settings->camera1DistortionCoef();
@@ -561,8 +565,9 @@ void Tracking::newParameterLoader(Settings *settings) {
     if((mSensor==System::STEREO || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD) &&
         settings->cameraType() == Settings::KannalaBrandt){
         mpCamera2 = settings->camera2();
+        auto lapping_area = static_cast<KannalaBrandt8*>(mpCamera2)->mvLappingArea;
         mpCamera2 = mpAtlas->AddCamera(mpCamera2);
-
+        static_cast<KannalaBrandt8*>(mpCamera2)->mvLappingArea = lapping_area;
         mTlr = settings->Tlr();
 
         mpFrameDrawer->both = true;
