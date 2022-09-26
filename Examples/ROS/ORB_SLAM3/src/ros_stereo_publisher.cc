@@ -42,8 +42,8 @@ public:
   frame_time_path(frame_time)
   {
     LoadImages(frame_time_path, frame_names, frame_times);
-    publisher_left_ = this->create_publisher<sensor_msgs::msg::Image>("/camera/left/image_raw", 10);
-    publisher_right_ = this->create_publisher<sensor_msgs::msg::Image>("/camera/right/image_raw", 10);
+    publisher_left_ = this->create_publisher<sensor_msgs::msg::Image>("/front/stereo_camera/left_image", 10);
+    publisher_right_ = this->create_publisher<sensor_msgs::msg::Image>("/front/stereo_camera/right_image", 10);
     timer_ = this->create_wall_timer(
       50ms, std::bind(&StereoPublisher::timer_callback, this));
   }

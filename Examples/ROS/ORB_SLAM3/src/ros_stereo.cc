@@ -89,8 +89,8 @@ int main(int argc, char** argv)
     ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::STEREO,true);
     ImageGrabber igb(&SLAM);
     auto nh = std::make_shared<StereoSubscriber>(&igb);
-    message_filters::Subscriber<sensor_msgs::msg::Image> image_sub_l(nh.get(), "/camera/left/image_raw");
-    message_filters::Subscriber<sensor_msgs::msg::Image> image_sub_r(nh.get(), "/camera/right/image_raw");
+    message_filters::Subscriber<sensor_msgs::msg::Image> image_sub_l(nh.get(), "/front/stereo_camera/left_image");
+    message_filters::Subscriber<sensor_msgs::msg::Image> image_sub_r(nh.get(), "/front/stereo_camera/right_image");
     message_filters::TimeSynchronizer<sensor_msgs::msg::Image, sensor_msgs::msg::Image> sync(image_sub_l, image_sub_r, 1);
     sync.registerCallback(boost::bind(&StereoSubscriber::call_back, nh.get(), _1, _2));
     rclcpp::spin(nh);
