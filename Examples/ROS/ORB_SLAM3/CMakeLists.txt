@@ -39,6 +39,10 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 find_package(OpenCV 4.4)
    if(NOT OpenCV_FOUND)
@@ -75,7 +79,7 @@ ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM3.so
 add_executable(Stereo
 src/ros_stereo.cc
 )
-ament_target_dependencies(Stereo rclcpp std_msgs sensor_msgs image_transport cv_bridge)
+ament_target_dependencies(Stereo rclcpp std_msgs sensor_msgs image_transport cv_bridge geometry_msgs tf2 tf2_ros nav_msgs)
 
 # Node for stereo image publisher
 add_executable(StereoPublisher

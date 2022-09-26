@@ -25,6 +25,10 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "tf2_ros/static_transform_broadcaster.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "nav_msgs/msg/odometry.hpp"
 #include <cv_bridge/cv_bridge.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
@@ -36,18 +40,27 @@
 
 using namespace std;
 
-class ImageGrabber
+class ImageGrabber : public rclcpp::Node 
 {
 public:
-    ImageGrabber(ORB_SLAM3::System* pSLAM): mpSLAM(pSLAM){
+    ImageGrabber(ORB_SLAM3::System* pSLAM): Node("pose_publisher"), mpSLAM(pSLAM){
         imageScale = mpSLAM->GetImageScale();
-    }
+        odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom");
+        // map_publisher = this->create_publisher<geometry_msgs::msg::TransformStamped>("/map");
+        tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+        tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+    }   
 
     void GrabStereo(const sensor_msgs::msg::Image::ConstSharedPtr& msgLeft,const sensor_msgs::msg::Image::ConstSharedPtr& msgRight);
-
+    void PublishTrack(Sophus::SE3f camera_pose, double timestamp);
     ORB_SLAM3::System* mpSLAM;
     float imageScale;
     cv::Mat M1l,M2l,M1r,M2r;
+    // rclcpp::Publisher<geometry_msgs::msg::TransformStamped> odom_publisher;
+    // rclcpp::Publisher<geometry_msgs::msg::TransformStamped> map_publisher;
+    std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
+    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
 };
 
 class StereoSubscriber : public rclcpp::Node {
@@ -110,6 +123,7 @@ void ImageGrabber::GrabStereo(const sensor_msgs::msg::Image::ConstSharedPtr& msg
         return;
     }
 
+    Sophus::SE3f camera_pose;
     if(imageScale != 1.f)
     {
 #ifdef REGISTER_TIMES
@@ -134,10 +148,42 @@ void ImageGrabber::GrabStereo(const sensor_msgs::msg::Image::ConstSharedPtr& msg
                 SLAM.InsertResizeTime(t_resize);
 #endif
         printf("TrackStereo: time %f", cv_ptrLeft->header.stamp.sec);
-        mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.sec);
+        camera_pose = mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.sec);
     } else {
         printf("TrackStereo: time %f", cv_ptrLeft->header.stamp.sec);
-        mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.sec);
+        camera_pose = mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.sec);
     }
+    PublishTrack(camera_pose, cv_ptrLeft->header.stamp.sec);
+}
 
+void ImageGrabber::PublishTrack(Sophus::SE3f camera_pose, double timestamp) {
+    Eigen::Matrix4f transform = camera_pose.matrix();
+    Eigen::Quaternionf Q_w_c(transform.block<3,3>(0, 0));
+    Eigen::Vector3f t_w_c = transform.block<3,1>(0, 3);
+    geometry_msgs::msg::TransformStamped odom_translation;
+    odom_translation.header.stamp.sec = timestamp;
+    odom_translation.header.frame_id = "map";
+    odom_translation.child_frame_id = "base_link";
+    odom_translation.transform.rotation.x = Q_w_c.x();
+    odom_translation.transform.rotation.y = Q_w_c.y();
+    odom_translation.transform.rotation.z = Q_w_c.z();
+    odom_translation.transform.rotation.w = Q_w_c.w();
+    odom_translation.transform.translation.x = t_w_c.x();
+    odom_translation.transform.translation.y = t_w_c.y();
+    odom_translation.transform.translation.z = t_w_c.z();
+    // odom_publisher->publish(odom_translation);
+    //tf_static_broadcaster_->sendTransform(odom_translation);
+    tf_broadcaster_->sendTransform(odom_translation);
+
+    nav_msgs::msg::Odometry odom;
+    odom.header.stamp.sec = timestamp;
+    odom.header.frame_id = "odom";
+    odom.pose.pose.position.x = t_w_c.x();
+    odom.pose.pose.position.y = t_w_c.y();
+    odom.pose.pose.position.z = t_w_c.z();
+    odom.pose.pose.orientation.x = Q_w_c.x();
+    odom.pose.pose.orientation.y = Q_w_c.y();
+    odom.pose.pose.orientation.z = Q_w_c.z();
+    odom.pose.pose.orientation.w = Q_w_c.w();
+    odom_publisher_->publish(odom);
 }
