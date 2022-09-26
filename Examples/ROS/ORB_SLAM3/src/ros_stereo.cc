@@ -45,7 +45,7 @@ class ImageGrabber : public rclcpp::Node
 public:
     ImageGrabber(ORB_SLAM3::System* pSLAM): Node("pose_publisher"), mpSLAM(pSLAM){
         imageScale = mpSLAM->GetImageScale();
-        odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom");
+        odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
         // map_publisher = this->create_publisher<geometry_msgs::msg::TransformStamped>("/map");
         tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
         tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
