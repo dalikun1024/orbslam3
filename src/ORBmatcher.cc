@@ -23,7 +23,7 @@
 
 #include<opencv2/core/core.hpp>
 
-#include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
+#include "DBoW2/DBoW2/FeatureVector.h"
 
 #include<stdint-gcc.h>
 
@@ -343,10 +343,13 @@ namespace ORB_SLAM3
                                                               : F.mvKeys[bestIdxF];
 
                                 float rot = kp.angle-Fkp.angle;
+                                if (isnan(rot) || rot < -360.0) {
+                                    continue;
+                                }
                                 if(rot<0.0)
                                     rot+=360.0f;
                                 int bin = round(rot*factor);
-                                if(bin==HISTO_LENGTH)
+                                if(bin < 0 || bin>=HISTO_LENGTH)
                                     bin=0;
                                 assert(bin>=0 && bin<HISTO_LENGTH);
                                 rotHist[bin].push_back(bestIdxF);
@@ -373,10 +376,13 @@ namespace ORB_SLAM3
                                                                    : F.mvKeys[bestIdxFR];
 
                                     float rot = kp.angle-Fkp.angle;
-                                    if(rot<0.0)
-                                        rot+=360.0f;
+                                    if(isnan(rot) || rot < -360.0)
+                                        continue;
+                                    if (rot < 0.0) {
+                                        rot += 360.0;
+                                    }
                                     int bin = round(rot*factor);
-                                    if(bin==HISTO_LENGTH)
+                                    if(bin < 0 || bin>=HISTO_LENGTH)
                                         bin=0;
                                     assert(bin>=0 && bin<HISTO_LENGTH);
                                     rotHist[bin].push_back(bestIdxFR);
@@ -716,10 +722,13 @@ namespace ORB_SLAM3
                     if(mbCheckOrientation)
                     {
                         float rot = F1.mvKeysUn[i1].angle-F2.mvKeysUn[bestIdx2].angle;
+                        if (isnan(rot) || rot < -360.0) {
+                            continue;
+                        }
                         if(rot<0.0)
                             rot+=360.0f;
                         int bin = round(rot*factor);
-                        if(bin==HISTO_LENGTH)
+                        if(bin < 0 || bin>=HISTO_LENGTH)
                             bin=0;
                         assert(bin>=0 && bin<HISTO_LENGTH);
                         rotHist[bin].push_back(i1);
@@ -855,10 +864,13 @@ namespace ORB_SLAM3
                             if(mbCheckOrientation)
                             {
                                 float rot = vKeysUn1[idx1].angle-vKeysUn2[bestIdx2].angle;
+                                if (isnan(rot) || rot < -360.0) {
+                                    continue;
+                                }
                                 if(rot<0.0)
                                     rot+=360.0f;
                                 int bin = round(rot*factor);
-                                if(bin==HISTO_LENGTH)
+                                if(bin < 0 || bin>=HISTO_LENGTH)
                                     bin=0;
                                 assert(bin>=0 && bin<HISTO_LENGTH);
                                 rotHist[bin].push_back(idx1);
@@ -1087,10 +1099,13 @@ namespace ORB_SLAM3
                         if(mbCheckOrientation)
                         {
                             float rot = kp1.angle-kp2.angle;
+                            if (isnan(rot) || rot < -360.0f) {
+                                continue;
+                            }
                             if(rot<0.0)
                                 rot+=360.0f;
                             int bin = round(rot*factor);
-                            if(bin==HISTO_LENGTH)
+                            if(bin < 0 || bin>=HISTO_LENGTH)
                                 bin=0;
                             assert(bin>=0 && bin<HISTO_LENGTH);
                             rotHist[bin].push_back(idx1);
@@ -1782,10 +1797,13 @@ namespace ORB_SLAM3
                                                                            : (bestIdx2 < CurrentFrame.Nleft) ? CurrentFrame.mvKeys[bestIdx2]
                                                                                                              : CurrentFrame.mvKeysRight[bestIdx2 - CurrentFrame.Nleft];
                             float rot = kpLF.angle-kpCF.angle;
+                            if (isnan(rot) || rot < -360.0f) {
+                                continue;
+                            }
                             if(rot<0.0)
                                 rot+=360.0f;
                             int bin = round(rot*factor);
-                            if(bin==HISTO_LENGTH)
+                            if(bin < 0 || bin>=HISTO_LENGTH)
                                 bin=0;
                             assert(bin>=0 && bin<HISTO_LENGTH);
                             rotHist[bin].push_back(bestIdx2);
@@ -1846,10 +1864,13 @@ namespace ORB_SLAM3
                                 cv::KeyPoint kpCF = CurrentFrame.mvKeysRight[bestIdx2];
 
                                 float rot = kpLF.angle-kpCF.angle;
+                                if (isnan(rot) || rot < -360.0f) {
+                                    continue;
+                                }
                                 if(rot<0.0)
                                     rot+=360.0f;
                                 int bin = round(rot*factor);
-                                if(bin==HISTO_LENGTH)
+                                if(bin < 0 || bin>=HISTO_LENGTH)
                                     bin=0;
                                 assert(bin>=0 && bin<HISTO_LENGTH);
                                 rotHist[bin].push_back(bestIdx2  + CurrentFrame.Nleft);
@@ -1971,10 +1992,13 @@ namespace ORB_SLAM3
                         if(mbCheckOrientation)
                         {
                             float rot = pKF->mvKeysUn[i].angle-CurrentFrame.mvKeysUn[bestIdx2].angle;
+                            if (isnan(rot) || rot < -360.0f) {
+                                continue;
+                            }
                             if(rot<0.0)
                                 rot+=360.0f;
                             int bin = round(rot*factor);
-                            if(bin==HISTO_LENGTH)
+                            if(bin < 0 || bin>=HISTO_LENGTH)
                                 bin=0;
                             assert(bin>=0 && bin<HISTO_LENGTH);
                             rotHist[bin].push_back(bestIdx2);

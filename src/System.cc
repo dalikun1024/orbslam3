@@ -549,6 +549,7 @@ void System::Shutdown()
     {
         Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_NORMAL);
         SaveAtlas(FileType::BINARY_FILE);
+        cout << "save Atlas over" << endl;
     }
 
     /*if(mpViewer)
