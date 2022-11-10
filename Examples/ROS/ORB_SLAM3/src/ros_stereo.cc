@@ -136,9 +136,12 @@ void ImageGrabber::GrabStereo(const sensor_msgs::msg::Image::ConstSharedPtr& msg
                 int width = cv_ptrLeft->image.cols * imageScale;
                 int height = cv_ptrLeft->image.rows * imageScale;
                 cv::Mat imLeft, imRight;
-                cv::resize(cv_ptrLeft->image, imLeft, cv::Size(width, height));
-                cv::resize(cv_ptrRight->image, imRight, cv::Size(width, height));
-#ifdef REGISTER_TIMES
+                if (imLeft.empty() || imRight.empty()) {
+                    mpSLAM->Shutdown();
+                } else {
+                    cv::resize(cv_ptrLeft->image, imLeft, cv::Size(width, height));
+                    cv::resize(cv_ptrRight->image, imRight, cv::Size(width, height));
+    #ifdef REGISTER_TIMES
     #ifdef COMPILEDWITHC11
                 std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
     #else
@@ -147,11 +150,16 @@ void ImageGrabber::GrabStereo(const sensor_msgs::msg::Image::ConstSharedPtr& msg
                 t_resize = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t_End_Resize - t_Start_Resize).count();
                 SLAM.InsertResizeTime(t_resize);
 #endif
-        printf("TrackStereo: time %f", cv_ptrLeft->header.stamp.sec);
-        camera_pose = mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.sec);
+                    printf("TrackStereo: time %f", cv_ptrLeft->header.stamp.sec);
+                    camera_pose = mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.sec);
+                }
     } else {
         printf("TrackStereo: time %f", cv_ptrLeft->header.stamp.sec);
-        camera_pose = mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.sec);
+        if (cv_ptrLeft->image.empty() || cv_ptrRight->image.empty()) {
+            mpSLAM->Shutdown();
+        } else {
+            camera_pose = mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.sec);
+        }
     }
     PublishTrack(camera_pose, cv_ptrLeft->header.stamp.sec);
 }

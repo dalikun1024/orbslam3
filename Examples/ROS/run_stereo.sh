@@ -1,0 +1,1 @@
+ros2 run orbslam3 Stereo /work/orb_slam3/Vocabulary/ORBvoc.txt /work/bj_stereo_fisheye_data/bj_stereo_fisheye_1010/bj_stereo_fisheye_1010.yaml

@@ -1,0 +1,1 @@
+ros2 run orbslam3 StereoPublisher /work/bj_stereo_fisheye_data/bj_stereo_fisheye_1010/cam0/ /work/bj_stereo_fisheye_data/bj_stereo_fisheye_1010/cam1/ /work/bj_stereo_fisheye_data/bj_stereo_fisheye_1010/frame_timestamp.txt
