@@ -1505,7 +1505,8 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
         mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,mpCamera2,mTlr,&mLastFrame,*mpImuCalib);
 
     //cout << "Incoming frame ended" << endl;
-
+    Sophus::SE3<float> priorpose = GetFramePoseData(mCurrentFrame.mTimeStamp);
+    mCurrentFrame.SetPriorPose(priorpose);
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
 
@@ -1795,6 +1796,23 @@ void Tracking::ResetFrameIMU()
     // TODO To implement...
 }
 
+void Tracking::GrabPriorPoseData(const PriorPose &priorPose)
+{
+    unique_lock<mutex> lock(mMutexPriorPoseQueue);
+    mlQueuePriorPoseData.push_back(priorPose);
+}
+
+Sophus::SE3<float> Tracking::GetFramePoseData(double timestamp)
+{
+    unique_lock<mutex> lock(mMutexPriorPoseQueue);
+    // TODO: search pripor pose of current frame pripor pose queue
+    for (auto closest_it = mlQueuePriorPoseData.begin(), end_it = mlQueuePriorPoseData.end(); closest_it != end_it; ++closest_it) {
+        if (fabs(closest_it->t - timestamp) < 0.005) {
+            return closest_it->pose;
+        }
+    }
+    return Sophus::SE3<float>();
+}
 
 void Tracking::Track()
 {
@@ -1905,6 +1923,7 @@ void Tracking::Track()
     {
         if(mSensor==System::STEREO || mSensor==System::RGBD || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD)
         {
+            // TODO: use ground truth pose
             StereoInitialization();
         }
         else
@@ -1951,6 +1970,11 @@ void Tracking::Track()
                 {
                     Verbose::PrintMess("TRACK: Track with respect to the reference KF ", Verbose::VERBOSITY_DEBUG);
                     bOK = TrackReferenceKeyFrame();
+                    // if (mCurrentFrame.HasPriorPose())  {
+                    //     // TODO: set mbvOutlier with prior pose
+                    //     std::fill(mCurrentFrame.mvbOutlier.begin(), mCurrentFrame.mvbOutlier.end(), false);
+                    //     bOK = true;
+                    // }
                 }
                 else
                 {
@@ -1958,6 +1982,18 @@ void Tracking::Track()
                     bOK = TrackWithMotionModel();
                     if(!bOK)
                         bOK = TrackReferenceKeyFrame();
+                    
+                    // if (!mCurrentFrame.HasPriorPose()) 
+                    // {
+                    //     bOK = TrackWithMotionModel();
+                    //     if(!bOK)
+                    //         bOK = TrackReferenceKeyFrame();
+                    // } else {
+                    //     // TODO: set mbvOutlier with prior pose
+                    //     std::fill(mCurrentFrame.mvbOutlier.begin(), mCurrentFrame.mvbOutlier.end(), false);
+                    //     bOK = true;
+                    // }
+                    
                 }
 
 
@@ -2372,7 +2408,16 @@ void Tracking::StereoInitialization()
             mCurrentFrame.SetImuPoseVelocity(Rwb0, twb0, Vwb0);
         }
         else
-            mCurrentFrame.SetPose(Sophus::SE3f());
+            // mCurrentFrame.SetPose(Sophus::SE3f());
+        {
+            if (!mlQueuePriorPoseData.empty()) {
+                Sophus::SE3<float> priorPose = GetFramePoseData(mCurrentFrame.mTimeStamp);
+                mCurrentFrame.SetPriorPose(priorPose);
+                mCurrentFrame.SetPose(priorPose);
+            } else {
+                mCurrentFrame.SetPose(Sophus::SE3f());
+            }
+        }
 
         // Create KeyFrame
         KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
@@ -2741,7 +2786,10 @@ bool Tracking::TrackReferenceKeyFrame()
     }
 
     mCurrentFrame.mvpMapPoints = vpMapPointMatches;
-    mCurrentFrame.SetPose(mLastFrame.GetPose());
+    // if (!mCurrentFrame.HasPriorPose()) {
+    //     mCurrentFrame.SetPose(mLastFrame.GetPose());
+    // }
+    // mCurrentFrame.SetPose(mLastFrame.GetPose());
 
     //mCurrentFrame.PrintPointDistribution();
 
@@ -2872,6 +2920,7 @@ bool Tracking::TrackWithMotionModel()
     }
     else
     {
+        // TODO: use ground pose
         mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
     }
 
@@ -3698,7 +3747,10 @@ bool Tracking::Relocalization()
             if(bTcw)
             {
                 Sophus::SE3f Tcw(eigTcw);
-                mCurrentFrame.SetPose(Tcw);
+                // mCurrentFrame.SetPose(Tcw);
+                if (!mCurrentFrame.HasPriorPose()) {
+                    mCurrentFrame.SetPose(Tcw);
+                }
                 // Tcw.copyTo(mCurrentFrame.mTcw);
 
                 set<MapPoint*> sFound;
@@ -3715,7 +3767,13 @@ bool Tracking::Relocalization()
                     else
                         mCurrentFrame.mvpMapPoints[j]=NULL;
                 }
-
+                // int nGood = 0;
+                // if (!mCurrentFrame.HasPriorPose()) {
+                //     nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+                // } else {
+                //     // use prior pose calculate good
+                //     nGood = 50;
+                // }
                 int nGood = Optimizer::PoseOptimization(&mCurrentFrame);
 
                 if(nGood<10)

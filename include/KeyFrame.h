@@ -200,6 +200,8 @@ public:
     // Pose functions
     void SetPose(const Sophus::SE3f &Tcw);
     void SetVelocity(const Eigen::Vector3f &Vw_);
+    void SetPriorPose(const Sophus::SE3f &TcwPrior);
+    bool HasPriorPose();
 
     Sophus::SE3f GetPose();
 
@@ -431,6 +433,8 @@ protected:
     Eigen::Matrix3f mRcw;
     Sophus::SE3<float> mTwc;
     Eigen::Matrix3f mRwc;
+    Sophus::SE3<float> mTcwPrior;
+    bool mbHasPriorPose;
 
     // IMU position
     Eigen::Vector3f mOwb;

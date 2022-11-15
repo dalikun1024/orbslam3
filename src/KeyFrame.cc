@@ -90,6 +90,9 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     }
 
     mImuBias = F.mImuBias;
+    if (F.HasPriorPose()) {
+        SetPriorPose(F.GetPose());
+    }
     SetPose(F.GetPose());
 
     mnOriginMapId = pMap->GetId();
@@ -126,6 +129,18 @@ void KeyFrame::SetVelocity(const Eigen::Vector3f &Vw)
     unique_lock<mutex> lock(mMutexPose);
     mVw = Vw;
     mbHasVelocity = true;
+}
+
+void KeyFrame::SetPriorPose(const Sophus::SE3f &TcwPrior)
+{
+    unique_lock<mutex> lock(mMutexPose);
+    mbHasPriorPose = true;
+    mTcwPrior = TcwPrior;
+}
+
+bool KeyFrame::HasPriorPose()
+{
+    return mbHasPriorPose;
 }
 
 Sophus::SE3f KeyFrame::GetPose()
