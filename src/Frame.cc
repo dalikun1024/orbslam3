@@ -82,6 +82,8 @@ Frame::Frame(const Frame &frame)
 
     if(frame.mbHasPose)
         SetPose(frame.GetPose());
+    if(frame.mbHasPriorPose)
+        SetPriorPose(frame.GetPose());
 
     if(frame.HasVelocity())
     {
@@ -434,6 +436,11 @@ void Frame::SetPose(const Sophus::SE3<float> &Tcw) {
     UpdatePoseMatrices();
     mbIsSet = true;
     mbHasPose = true;
+}
+
+void Frame::SetPriorPose(const Sophus::SE3<float> &TcwPrior) {
+    mTcwPrior = TcwPrior;
+    mbHasPriorPose = true;
 }
 
 void Frame::SetNewBias(const IMU::Bias &b)

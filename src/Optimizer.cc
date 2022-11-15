@@ -830,6 +830,11 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     Sophus::SE3<float> Tcw = pFrame->GetPose();
     vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),Tcw.translation().cast<double>()));
     vSE3->setId(0);
+    if (pFrame->HasPriorPose()) {
+        vSE3->setFixed(true);
+    } else {
+        vSE3->setFixed(false);
+    }
     vSE3->setFixed(false);
     optimizer.addVertex(vSE3);
 
@@ -1108,7 +1113,9 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     g2o::SE3Quat SE3quat_recov = vSE3_recov->estimate();
     Sophus::SE3<float> pose(SE3quat_recov.rotation().cast<float>(),
             SE3quat_recov.translation().cast<float>());
-    pFrame->SetPose(pose);
+    if (!pFrame->HasPriorPose())
+        pFrame->SetPose(pose);
+    // pFrame->SetPose(pose);
 
     return nInitialCorrespondences-nBad;
 }
@@ -1217,7 +1224,11 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         Sophus::SE3<float> Tcw = pKFi->GetPose();
         vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(), Tcw.translation().cast<double>()));
         vSE3->setId(pKFi->mnId);
-        vSE3->setFixed(pKFi->mnId==pMap->GetInitKFid());
+        if (pKFi->HasPriorPose() && pKFi != pKF) { // TODO: fix all frame pose
+            vSE3->setFixed(true);
+        } else {
+            vSE3->setFixed(pKFi->mnId==pMap->GetInitKFid());
+        }
         optimizer.addVertex(vSE3);
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;
@@ -1482,7 +1493,10 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKFi->mnId));
         g2o::SE3Quat SE3quat = vSE3->estimate();
         Sophus::SE3f Tiw(SE3quat.rotation().cast<float>(), SE3quat.translation().cast<float>());
-        pKFi->SetPose(Tiw);
+        if (!pKFi->HasPriorPose())
+        {
+            pKFi->SetPose(Tiw);
+        }
     }
 
     //Points

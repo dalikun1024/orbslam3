@@ -1,12 +1,12 @@
 #!/bin/bash
-pathDatasetTUM_VI='/work/bj_stereo_fisheye_data/bj_stereo_fisheye_3' #Example, it is necesary to change it by the dataset path
+pathDatasetTUM_VI='/home/likun/data/stereo_fisheye_1012' #Example, it is necesary to change it by the dataset path
 
 
 #------------------------------------
 # Stereo Examples
 echo "Launching Room 1 with Stereo sensor"
 
-./Examples/Stereo/stereo_tum_vi Vocabulary/ORBvoc.txt "$pathDatasetTUM_VI"/bj_stereo_fisheye.ymal "$pathDatasetTUM_VI"/cam0 "$pathDatasetTUM_VI"/cam1 "$pathDatasetTUM_VI"/bj_stereo_fisheye_time3.txt bj_stereo_fisheye_3
+./Examples/Stereo/stereo_tum_vi Vocabulary/ORBvoc.txt "$pathDatasetTUM_VI"/bj_stereo_fisheye.yaml "$pathDatasetTUM_VI"/cam0 "$pathDatasetTUM_VI"/cam1 "$pathDatasetTUM_VI"/timestamps.txt bj_stereo_fisheye_1012_traj
 
 
 # ./Examples/Stereo/stereo_tum_vi Vocabulary/ORBvoc.txt "$pathDatasetTUM_VI"/bj_stereo_fisheye.ymal "$pathDatasetTUM_VI"/cam0 "$pathDatasetTUM_VI"/cam1 "$pathDatasetTUM_VI"/bj_stereo_fisheye_data1.txt bj_stereo_fisheye_1

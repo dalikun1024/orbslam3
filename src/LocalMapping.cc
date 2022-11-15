@@ -151,6 +151,7 @@ void LocalMapping::Run()
                     }
                     else
                     {
+                        // TODO: map only BA
                         Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpCurrentKeyFrame->GetMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
                         b_doneLBA = true;
                     }

@@ -36,6 +36,7 @@
 #include "System.h"
 #include "ImuTypes.h"
 #include "Settings.h"
+#include "PriorPose.h"
 
 #include "GeometricCamera.h"
 
@@ -74,6 +75,9 @@ public:
     Sophus::SE3f GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
+
+    void GrabPriorPoseData(const PriorPose &priorPose);
+    Sophus::SE3f GetFramePoseData(double timestamp);
 
     void SetLocalMapper(LocalMapping* pLocalMapper);
     void SetLoopClosing(LoopClosing* pLoopClosing);
@@ -243,6 +247,10 @@ protected:
 
     // Imu calibration parameters
     IMU::Calib *mpImuCalib;
+
+    // Queue of Prior pose 
+    std::list<PriorPose>mlQueuePriorPoseData;
+    std::mutex mMutexPriorPoseQueue;
 
     // Last Bias Estimation (at keyframe creation)
     IMU::Bias mLastBias;
