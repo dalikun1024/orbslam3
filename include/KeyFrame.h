@@ -204,7 +204,7 @@ public:
     bool HasPriorPose();
 
     Sophus::SE3f GetPose();
-
+    Sophus::SE3f GetPriorPose();
     Sophus::SE3f GetPoseInverse();
     Eigen::Vector3f GetCameraCenter();
 

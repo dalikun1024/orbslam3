@@ -196,7 +196,7 @@ namespace ORB_SLAM3 {
 	                        vbInliers[mvKeyPointIndices[i]] = true;
 	                }
 	                Tout = mRefinedTcw;
-	                return true;
+	                // return true;
 	            }
 
 	        }

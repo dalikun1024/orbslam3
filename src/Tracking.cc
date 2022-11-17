@@ -1507,6 +1507,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     //cout << "Incoming frame ended" << endl;
     Sophus::SE3<float> priorpose = GetFramePoseData(mCurrentFrame.mTimeStamp);
     mCurrentFrame.SetPriorPose(priorpose);
+    mCurrentFrame.SetPose(priorpose);
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
 
@@ -2239,6 +2240,10 @@ void Tracking::Track()
 #endif
 
         // Update drawer
+        Sophus::SE3f cur_pose = mCurrentFrame.GetPose();
+        Sophus::SE3f prior_pose = mCurrentFrame.GetPriorPose();
+        std::cout << "pose: " << "cur: " << cur_pose.translation().x() << " " << cur_pose.translation().y() << " " << cur_pose.translation().z() << std::endl;
+        std::cout << "pose: " << "pri: " << prior_pose.translation().x() << " " << prior_pose.translation().y() << " " << prior_pose.translation().z() << std::endl;
         mpFrameDrawer->Update(this);
         if(mCurrentFrame.isSet())
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
@@ -2417,6 +2422,7 @@ void Tracking::StereoInitialization()
             } else {
                 mCurrentFrame.SetPose(Sophus::SE3f());
             }
+            // mCurrentFrame.SetPose(Sophus::SE3f());
         }
 
         // Create KeyFrame
@@ -2449,7 +2455,7 @@ void Tracking::StereoInitialization()
                 int rightIndex = mCurrentFrame.mvLeftToRightMatch[i];
                 if(rightIndex != -1){
                     Eigen::Vector3f x3D = mCurrentFrame.mvStereo3Dpoints[i];
-
+                    x3D = mCurrentFrame.GetRwc() * x3D + mCurrentFrame.GetOw();
                     MapPoint* pNewMP = new MapPoint(x3D, pKFini, mpAtlas->GetCurrentMap());
 
                     pNewMP->AddObservation(pKFini,i);
@@ -3663,6 +3669,7 @@ void Tracking::UpdateLocalKeyFrames()
 bool Tracking::Relocalization()
 {
     Verbose::PrintMess("Starting relocalization", Verbose::VERBOSITY_NORMAL);
+    std::cout << "Starting relocalization" << std::endl;
     // Compute Bag of Words Vector
     mCurrentFrame.ComputeBoW();
 
@@ -3825,6 +3832,7 @@ bool Tracking::Relocalization()
             }
         }
     }
+    std::cout << "Ending relocalization" << std::endl;
 
     if(!bMatch)
     {

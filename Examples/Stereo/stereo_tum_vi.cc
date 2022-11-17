@@ -173,9 +173,9 @@ int main(int argc, char **argv)
 
             if(ni>=0)
             {
-                // if (vTimestampsPriorPose[0][first_priorpose[0]] >= vTimestampsCam[seq][ni]) {
-                //     continue;
-                // }
+                if (vTimestampsPriorPose[0][first_priorpose[0]] >= vTimestampsCam[seq][ni]) {
+                    continue;
+                }
                 // cout << "t_cam " << tframe << endl;
                 while(vTimestampsPriorPose[seq][first_priorpose[seq]]<=vTimestampsCam[seq][ni])
                 {
@@ -186,7 +186,6 @@ int main(int argc, char **argv)
                 }
             }
 
-            std::cout << "xxxx: " << tframe << " imu time: " << vTimestampsPriorPose[seq][first_priorpose[seq]] << std::endl;
             // Pass the image to the SLAM system
             SLAM.TrackStereo(imLeft,imRight,tframe, vector<ORB_SLAM3::IMU::Point>(), priorPose);
 
@@ -353,8 +352,9 @@ void LoadPriorPose(const string &strPriorPosePath, vector<double> &vTimeStamps, 
             vTimeStamps.push_back(data[0]/1e9);
             Eigen::Vector3d twc(data[1], data[2], data[3]);
             Eigen::Quaterniond Qwc(data[7], data[4], data[5], data[6]);            
-            Sophus::SE3<double> priorPosed(Qwc, twc);
-            priorPoses.push_back(priorPosed.cast<float>());
+            Sophus::SE3<double> priorPosedTwc(Qwc, twc);
+            Sophus::SE3<double> Tcw = priorPosedTwc.inverse();
+            priorPoses.push_back(Tcw.cast<float>());
         }
     }
 }

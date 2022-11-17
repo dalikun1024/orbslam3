@@ -149,6 +149,12 @@ Sophus::SE3f KeyFrame::GetPose()
     return mTcw;
 }
 
+Sophus::SE3f KeyFrame::GetPriorPose()
+{
+    unique_lock<mutex> lock(mMutexPose);
+    return mTcwPrior;
+}
+
 Sophus::SE3f KeyFrame::GetPoseInverse()
 {
     unique_lock<mutex> lock(mMutexPose);

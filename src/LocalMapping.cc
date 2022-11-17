@@ -906,6 +906,7 @@ void LocalMapping::KeyFrameCulling()
     // A keyframe is considered redundant if the 90% of the MapPoints it sees, are seen
     // in at least other 3 keyframes (in the same or finer scale)
     // We only consider close stereo points
+    std::cout << "keyFrameCulling start" << std::endl;
     const int Nd = 21;
     mpCurrentKeyFrame->UpdateBestCovisibles();
     vector<KeyFrame*> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
@@ -1052,6 +1053,7 @@ void LocalMapping::KeyFrameCulling()
             break;
         }
     }
+    std::cout << "keyFrameCulling end" << std::endl;
 }
 
 void LocalMapping::RequestReset()

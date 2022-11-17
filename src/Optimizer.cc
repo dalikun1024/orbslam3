@@ -1115,7 +1115,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
             SE3quat_recov.translation().cast<float>());
     if (!pFrame->HasPriorPose())
         pFrame->SetPose(pose);
-    // pFrame->SetPose(pose);
+    pFrame->SetPose(pose);
 
     return nInitialCorrespondences-nBad;
 }
@@ -1229,6 +1229,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         } else {
             vSE3->setFixed(pKFi->mnId==pMap->GetInitKFid());
         }
+        // vSE3->setFixed(pKFi->mnId==pMap->GetInitKFid());
         optimizer.addVertex(vSE3);
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;

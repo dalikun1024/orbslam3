@@ -149,6 +149,10 @@ public:
         return mTcw;
     }
 
+    inline Sophus::SE3<float> GetPriorPose() const {
+        return mTcwPrior;
+    }
+
     inline Eigen::Matrix3f GetRwc() const {
         return mRwc;
     }
@@ -163,6 +167,7 @@ public:
 
     inline bool HasPriorPose() const {
         return mbHasPriorPose;
+        // return false;
     }
 
     inline bool HasVelocity() const {
