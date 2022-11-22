@@ -1221,10 +1221,12 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     {
         KeyFrame* pKFi = *lit;
         g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float> Tcw = pKFi->GetPose();
+        // Sophus::SE3<float> Tcw = pKFi->GetPose();
+        Sophus::SE3<float> Tcw = pKFi->GetPriorPose();
+        pKFi->SetPose(Tcw);
         vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(), Tcw.translation().cast<double>()));
         vSE3->setId(pKFi->mnId);
-        if (pKFi->HasPriorPose() && pKFi != pKF) { // TODO: fix all frame pose
+        if (pKFi != pKF) { // TODO: fix all frame pose
             vSE3->setFixed(true);
         } else {
             vSE3->setFixed(pKFi->mnId==pMap->GetInitKFid());
@@ -1243,7 +1245,9 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     {
         KeyFrame* pKFi = *lit;
         g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float> Tcw = pKFi->GetPose();
+        // Sophus::SE3<float> Tcw = pKFi->GetPose();
+        Sophus::SE3<float> Tcw = pKFi->GetPriorPose();
+        pKFi->SetPose(Tcw);
         vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),Tcw.translation().cast<double>()));
         vSE3->setId(pKFi->mnId);
         vSE3->setFixed(true);

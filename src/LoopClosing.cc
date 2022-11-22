@@ -119,6 +119,7 @@ void LoopClosing::Run()
 #endif
             if(bFindedRegion)
             {
+                std::cout << "loopclosing start" << std::endl;
                 if(mbMergeDetected)
                 {
                     if ((mpTracker->mSensor==System::IMU_MONOCULAR || mpTracker->mSensor==System::IMU_STEREO || mpTracker->mSensor==System::IMU_RGBD) &&
@@ -291,7 +292,7 @@ void LoopClosing::Run()
                     mnLoopNumNotFound = 0;
                     mbLoopDetected = false;
                 }
-
+            std::cout << "loopclosing end" << std::endl;
             }
             mpLastCurrentKF = mpCurrentKF;
         }
