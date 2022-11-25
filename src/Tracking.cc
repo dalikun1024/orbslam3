@@ -3086,6 +3086,7 @@ bool Tracking::TrackLocalMap()
 
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
+    std::cout << "TrackLocalMap inliers: " << mnMatchesInliers << std::endl;
     mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
     if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
         return false;
@@ -3220,7 +3221,7 @@ bool Tracking::NeedNewKeyFrame()
     const bool c1c = mSensor!=System::MONOCULAR && mSensor!=System::IMU_MONOCULAR && mSensor!=System::IMU_STEREO && mSensor!=System::IMU_RGBD && (mnMatchesInliers<nRefMatches*0.25 || bNeedToInsertClose) ;
     // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
     const bool c2 = (((mnMatchesInliers<nRefMatches*thRefRatio || bNeedToInsertClose)) && mnMatchesInliers>15);
-
+    std::cout << "mnMatchesInliners: " << mnMatchesInliers << " nRefMatches: " << nRefMatches << " needtoInsert: " << bNeedToInsertClose << " matchesinliers: " << mnMatchesInliers << std::endl;
     //std::cout << "NeedNewKF: c1a=" << c1a << "; c1b=" << c1b << "; c1c=" << c1c << "; c2=" << c2 << std::endl;
     // Temporal condition for Inertial cases
     bool c3 = false;
@@ -3356,6 +3357,9 @@ void Tracking::CreateNewKeyFrame()
                     }
                     else{
                         x3D = mCurrentFrame.UnprojectStereoFishEye(i);
+                        if (mCurrentFrame.HasPriorPose()) {
+                            x3D = mCurrentFrame.UnprojectStereoFishEyePriorPose(i);
+                        }
                     }
 
                     MapPoint* pNewMP = new MapPoint(x3D,pKF,mpAtlas->GetCurrentMap());

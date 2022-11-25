@@ -1252,4 +1252,11 @@ Eigen::Vector3f Frame::UnprojectStereoFishEye(const int &i){
     return mRwc * mvStereo3Dpoints[i] + mOw;
 }
 
+Eigen::Vector3f Frame::UnprojectStereoFishEyePriorPose(const int &i){
+    Sophus::SE3f TwcPrior = mTcwPrior.inverse();
+    Eigen::Matrix3f Rwc = TwcPrior.rotationMatrix();
+    Eigen::Vector3f Ow = TwcPrior.translation();
+    return Rwc * mvStereo3Dpoints[i] + Ow;
+}
+
 } //namespace ORB_SLAM

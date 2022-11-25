@@ -368,6 +368,8 @@ public:
 
     Eigen::Vector3f UnprojectStereoFishEye(const int &i);
 
+    Eigen::Vector3f UnprojectStereoFishEyePriorPose(const int &i);
+
     cv::Mat imgLeft, imgRight;
 
     void PrintPointDistribution(){
