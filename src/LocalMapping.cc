@@ -152,7 +152,10 @@ void LocalMapping::Run()
                     else
                     {
                         // TODO: map only BA
-                        Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpCurrentKeyFrame->GetMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
+                        auto t1 = std::chrono::steady_clock::now();
+                        Optimizer::LocalBundleAdjustmentMapOnly(mpCurrentKeyFrame,&mbAbortBA, mpCurrentKeyFrame->GetMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
+                        std::chrono::duration<double> localBA_dur = (std::chrono::steady_clock::now()-t1);
+                        std::cout << "localBA time: " << localBA_dur.count() << std::endl;
                         b_doneLBA = true;
                     }
 

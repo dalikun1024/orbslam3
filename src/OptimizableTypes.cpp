@@ -19,6 +19,47 @@
 #include "OptimizableTypes.h"
 
 namespace ORB_SLAM3 {
+    bool EdgeSE3ProjectXYZOnlyPoint::read(std::istream& is){
+        for (int i=0; i<2; i++){
+            is >> _measurement[i];
+        }
+        for (int i=0; i<2; i++)
+            for (int j=i; j<2; j++) {
+                is >> information()(i,j);
+                if (i!=j)
+                    information()(j,i)=information()(i,j);
+            }
+        return true;
+    }
+
+    bool EdgeSE3ProjectXYZOnlyPoint::write(std::ostream& os) const {
+
+        for (int i=0; i<2; i++){
+            os << measurement()[i] << " ";
+        }
+
+        for (int i=0; i<2; i++)
+            for (int j=i; j<2; j++){
+                os << " " <<  information()(i,j);
+            }
+        return os.good();
+    }
+
+
+    void EdgeSE3ProjectXYZOnlyPoint::linearizeOplus() {
+        g2o::VertexSBAPointXYZ* vi = static_cast<g2o::VertexSBAPointXYZ*>(_vertices[0]);
+        Eigen::Vector3d xyz = vi->estimate();
+        Eigen::Vector3d xyz_trans = mTcw.map(xyz);
+
+        double x = xyz_trans[0];
+        double y = xyz_trans[1];
+        double z = xyz_trans[2];
+
+        auto projectJac = -pCamera->projectJac(xyz_trans);
+
+        _jacobianOplusXi =  projectJac * mTcw.rotation().toRotationMatrix(); // (de/dPc) * (dPc/dPw)
+    }
+
     bool EdgeSE3ProjectXYZOnlyPose::read(std::istream& is){
         for (int i=0; i<2; i++){
             is >> _measurement[i];
@@ -212,6 +253,55 @@ namespace ORB_SLAM3 {
         _jacobianOplusXj = -pCamera->projectJac(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
     }
 
+
+    EdgeSE3ProjectXYZToBodyOnlyPoint::EdgeSE3ProjectXYZToBodyOnlyPoint() : BaseUnaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ>() {
+    }
+
+    bool EdgeSE3ProjectXYZToBodyOnlyPoint::read(std::istream& is){
+        for (int i=0; i<2; i++){
+            is >> _measurement[i];
+        }
+        for (int i=0; i<2; i++)
+            for (int j=i; j<2; j++) {
+                is >> information()(i,j);
+                if (i!=j)
+                    information()(j,i)=information()(i,j);
+            }
+        return true;
+    }
+
+    bool EdgeSE3ProjectXYZToBodyOnlyPoint::write(std::ostream& os) const {
+
+        for (int i=0; i<2; i++){
+            os << measurement()[i] << " ";
+        }
+
+        for (int i=0; i<2; i++)
+            for (int j=i; j<2; j++){
+                os << " " <<  information()(i,j);
+            }
+        return os.good();
+    }
+
+
+    void EdgeSE3ProjectXYZToBodyOnlyPoint::linearizeOplus() {
+        g2o::SE3Quat T_rw = mTrl * mTlw;
+        g2o::VertexSBAPointXYZ* vi = static_cast<g2o::VertexSBAPointXYZ*>(_vertices[0]);
+        Eigen::Vector3d X_w = vi->estimate();
+        Eigen::Vector3d X_l = mTlw.map(X_w);
+        Eigen::Vector3d X_r = mTrl.map(mTlw.map(X_w));
+
+        _jacobianOplusXi =  -pCamera->projectJac(X_r) * T_rw.rotation().toRotationMatrix();
+
+        double x = X_l[0];
+        double y = X_l[1];
+        double z = X_l[2];
+
+        Eigen::Matrix<double,3,6> SE3deriv;
+        SE3deriv << 0.f, z,   -y, 1.f, 0.f, 0.f,
+                -z , 0.f, x, 0.f, 1.f, 0.f,
+                y ,  -x , 0.f, 0.f, 0.f, 1.f;
+    }
 
     VertexSim3Expmap::VertexSim3Expmap() : BaseVertex<7, g2o::Sim3>()
     {
